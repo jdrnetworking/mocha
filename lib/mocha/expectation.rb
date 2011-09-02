@@ -422,6 +422,7 @@ module Mocha # :nodoc:
       @cardinality, @invocation_count = Cardinality.exactly(1), 0
       @return_values = ReturnValues.new
       @yield_parameters = YieldParameters.new
+      @yield_returns = false
       @backtrace = backtrace || caller
     end
 
@@ -461,12 +462,24 @@ module Mocha # :nodoc:
       @cardinality.satisfied?(@invocation_count)
     end
 
+    def yields_and_returns(*parameters)
+      @yield_returns = true
+      return yields(*parameters)
+    end
+
+    def yield_returns?
+      @yield_returns
+    end
+
     def invoke
       @invocation_count += 1
       perform_side_effects()
       if block_given? then
         @yield_parameters.next_invocation.each do |yield_parameters|
-          yield(*yield_parameters)
+          yield_retval = yield(*yield_parameters)
+          if yield_retval and yield_returns? then
+            return yield_retval
+          end
         end
       end
       @return_values.next

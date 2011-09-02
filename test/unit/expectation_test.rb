@@ -147,6 +147,17 @@ class ExpectationTest < Test::Unit::TestCase
     assert_equal [[1, 2, 3], [4, 5], [6, 7]], yielded_parameters
   end
 
+  def test_should_return_value_from_block_yielded_to
+    bar = Struct.new(:get_baz).new
+    bar.get_baz = :baz
+    assert_equal :baz, bar.get_baz
+    expectation = new_expectation().yields_and_returns(bar)
+    yielded_parameters = nil
+    retval = expectation.invoke() { |*parameters| yielded_parameters = parameters; parameters.first.get_baz.to_s }
+    assert_equal [bar], yielded_parameters
+    assert_equal 'baz', retval
+  end
+
   def test_should_return_specified_value
     expectation = new_expectation.returns(99)
     assert_equal 99, expectation.invoke
